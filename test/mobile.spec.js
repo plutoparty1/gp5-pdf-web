@@ -83,8 +83,8 @@ test.afterEach(async ({ page }) => {
   expect(await page.evaluate(() => window.__mobileQa.errors)).toEqual([]);
 });
 
-test('mobile picker accepts unknown uppercase GP5 while validating content and extension', async ({ page }, info) => {
-  expect(await page.locator('#file-input').getAttribute('accept')).toBeNull();
+test('mobile picker exposes GP5 as a general file and validates content and extension', async ({ page }, info) => {
+  expect(await page.locator('#file-input').getAttribute('accept')).toBe('.gp5,application/octet-stream');
   await screenshot(page, info, 'empty');
   for (const file of [payload('wrong.txt'), payload('broken.gp5', Buffer.from('not a guitar pro file'))]) {
     await page.locator('#file-input').setInputFiles(file);

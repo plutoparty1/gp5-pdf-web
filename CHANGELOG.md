@@ -1,8 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+- Android GP5 uploads open the general file picker using the `.gp5` extension and generic binary MIME hint; mobile regression coverage now checks this picker hint.
+
 ## 1.1.1
 
-- Android GP5 uploads now declare the `.gp5` extension and generic binary MIME type so the browser opens a general file picker rather than limiting selection to photos and videos.
+- Android GP5 upload file-picker hint update (see 1.1.2 for the release with matching regression coverage).
 
 ## 1.1.0
 
