@@ -39,7 +39,8 @@ for (const [name, base, paths] of [
 }
 await writeFile('release/SHA256SUMS.txt', `${checksums.join('\n')}\n`);
 await writeFile('release/NOTES.md', `GP5 PDF Web ${pkg.version}\n\n` +
-  'Select a GP5 file, choose instruments, and download their PDFs as one ZIP. Conversion stays in your browser.\n\n' +
+  'Convert GP5 scores on iPhone/iPad Safari, Android Chrome, Windows and Mac. Save/open individual PDFs, share files where supported, or download one ZIP. Conversion stays in your browser.\n\n' +
+  'Mobile WebKit/Chromium emulation is automated; native OS file/share dialogs still need physical-device verification.\n\n' +
   '- `GP5-PDF-Web-site.zip`: built static site, ready for static hosting.\n' +
   '- `GP5-PDF-Web-source.zip`: standalone source including automated tests and GitHub workflows.\n' +
   '- `SHA256SUMS.txt`: checksums for both archives.\n\n' +

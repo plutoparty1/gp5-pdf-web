@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+- iPhone/iPad Safari and Android Chrome usage: unrestricted native file picker with GP5 validation, individual PDF save/open links and supported native sharing.
+- Completed PDFs remain available after cancellation, later-track errors or ZIP creation failure; download actions are locked while busy and replaced URLs are released.
+- Touch-friendly result actions, safe-area spacing and Korean mobile saving guidance.
+- iPhone, iPad and Android emulation checks alongside desktop Chromium, WebKit and Firefox; native OS dialogs still require physical-device verification.
+
 ## 1.0.0
 
 - First browser release with local GP5 import and selectable instrument PDFs.

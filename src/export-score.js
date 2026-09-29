@@ -27,10 +27,10 @@ function selectTracks(indices, trackCount) {
   return [...selected];
 }
 
-export function createExporter(renderTrackPdf) {
+export function createExporter(renderTrackPdf, packZip = zipSync) {
   return async function exportSelected({ source, indices, signal = new AbortController().signal, onProgress = () => {} }) {
     const stem = safeName(source.name.replace(/\.gp5$/i, ''), 72);
-    const entries = Object.create(null);
+    const pdfs = [];
     let generatedBytes = 0;
     let cancelled = false;
     let error = null;
@@ -48,11 +48,10 @@ export function createExporter(renderTrackPdf) {
         if (generatedBytes + pdf.size > PDF_BUDGET) {
           throw new Error('PDF 합계가 128MB를 초과했습니다. 악기를 나누어 변환해 주세요.');
         }
-        const bytes = new Uint8Array(await pdf.arrayBuffer());
-        signal.throwIfAborted();
         const number = String(trackIndex + 1).padStart(2, '0');
-        entries[`${stem} - ${number} - ${safeName(source.trackNames[trackIndex], 96)}.pdf`] = bytes;
-        generatedBytes += bytes.length;
+        const name = `${stem} - ${number} - ${safeName(source.trackNames[trackIndex], 96)}.pdf`;
+        pdfs.push(new File([pdf], name, { type: 'application/pdf' }));
+        generatedBytes += pdf.size;
         onProgress({ ...progress, status: 'saved' });
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
@@ -61,17 +60,20 @@ export function createExporter(renderTrackPdf) {
       cancelled = signal.aborted || cause?.name === 'AbortError';
       error = cancelled ? null : cause instanceof Error ? cause.message : 'PDF를 변환하지 못했습니다.';
     }
-    const files = Object.keys(entries);
-    const filename = `${stem}${cancelled || error ? ' - partial' : ''}.zip`;
+    const files = pdfs.map(pdf => pdf.name);
     let blob = null;
     if (files.length > 0) {
       try {
-        blob = new Blob([zipSync(entries, { level: 0 })], { type: 'application/zip' });
+        const entries = Object.create(null);
+        for (const pdf of pdfs) entries[pdf.name] = new Uint8Array(await pdf.arrayBuffer());
+        blob = new Blob([packZip(entries, { level: 0 })], { type: 'application/zip' });
       } catch (cause) {
         error = `완료된 PDF를 ZIP으로 묶지 못했습니다: ${cause instanceof Error ? cause.message : '메모리 부족'}`;
       }
     }
-    return { blob, filename, files, cancelled, error };
+    cancelled ||= signal.aborted;
+    const filename = `${stem}${cancelled || error ? ' - partial' : ''}.zip`;
+    return { blob, filename, files, pdfs, cancelled, error };
   };
 }
 

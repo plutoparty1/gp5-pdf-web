@@ -6,7 +6,8 @@ This is a static browser application: native JavaScript modules, Vite, npm lockf
 
 | Module | Responsibility |
 | --- | --- |
-| `src/app.js` | UI state, selected original track indices, progress, AbortController, download URL lifetime |
+| `src/app.js` | UI state, selected original track indices, progress, AbortController |
+| `src/download-results.js` | Individual PDF/ZIP links, native file sharing, busy guards and object URL lifetime |
 | `src/import-score.js` / `encoding.js` | GP5 header/size checks, lazy alphaTab parsing, strict UTF-8/CP949 metadata decoding |
 | `src/export-score.js` | Selection validation, sequential per-track rendering, safe filenames, ZIP and partial results |
 | `src/pdf.js` / `pdf-score.js` | alphaTab SVG rendering and SVG-to-PDFKit conversion |
@@ -14,9 +15,9 @@ This is a static browser application: native JavaScript modules, Vite, npm lockf
 | `src/pdf-fonts.js` | Same-origin font loading, PDF embedding, failed-load cleanup and retry |
 | `src/pdf-layout.js` | A4 placement, whole-system pagination and header wrapping |
 
-`loadGp5(file)` returns `{name, title, trackNames, encoding, score}`. The UI carries the score object and original zero-based indices into `exportSelected({source, indices, signal, onProgress})`. Its result contains `{blob, filename, files, cancelled, error}`. The renderer returns an actual PDF Blob for one track. No UI code interprets GP5 bytes or draws notation.
+`loadGp5(file)` returns `{name, title, trackNames, encoding, score}`. The UI carries the score object and original zero-based indices into `exportSelected({source, indices, signal, onProgress})`. Its result contains `{blob, filename, files, pdfs, cancelled, error}`. The renderer returns an actual PDF Blob for one track. No UI code interprets GP5 bytes or draws notation.
 
-The UI only offers a ZIP link when a Blob exists. Cancellation or a later-track failure preserves already completed PDFs. Track numbers in filenames always refer to the source, including non-contiguous selections. Cancelling is cooperative: synchronous score layout may finish before cancellation is observed.
+The UI offers a ZIP link when a ZIP Blob exists and per-PDF links for each File in pdfs. Completed PDF Files survive ZIP assembly failure. Cancellation or a later-track failure preserves already completed PDFs. Track numbers in filenames always refer to the source, including non-contiguous selections. Cancelling is cooperative: synchronous score layout may finish before cancellation is observed.
 
 ## Browser and data boundaries
 
@@ -24,7 +25,7 @@ alphaTab and PDF code load when needed. Noto Sans CJK KR and Bravura are bundled
 
 Legacy Korean GP5 metadata is decoded from its original bytes. UTF-8 takes precedence when all original metadata decodes strictly; otherwise valid CP949 Korean metadata can be chosen. Derived short names do not decide the encoding. Tests for extended Korean syllables run in real browsers because Node's ICU decoder differs on some valid CP949 bytes.
 
-Large files and output are bounded to limit browser memory use. See [VERIFICATION.md](VERIFICATION.md). A web app cannot silently write beside a selected local file across browsers, so output uses an explicit ZIP download.
+Large files and output are bounded to limit browser memory use. See [VERIFICATION.md](VERIFICATION.md). A web app cannot silently write beside a selected local file across browsers, so output uses explicit PDF/ZIP downloads and capability-detected native file sharing. The native sharing dialog is invoked within the original user gesture; rejected sharing preserves download links.
 
 ## Deployment
 

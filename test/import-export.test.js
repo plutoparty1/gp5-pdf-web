@@ -76,6 +76,12 @@ test('exports only selected original indices with numbered ZIP entries and selec
   assert.deepEqual(Object.keys(entries), result.files);
   assert.deepEqual(entries[result.files[0]], pdfBytes(2));
   assert.deepEqual(entries[result.files[1]], pdfBytes(0));
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
+  for (const pdf of result.pdfs) {
+    assert.ok(pdf instanceof File);
+    assert.equal(pdf.type, 'application/pdf');
+    assert.deepEqual(new Uint8Array(await pdf.arrayBuffer()), entries[pdf.name]);
+  }
   assert.deepEqual(progress.filter((event) => event.status === 'saved').map((event) => [event.current, event.total, event.trackIndex]), [[1, 2, 2], [2, 2, 0]]);
   assert.equal(progress.find((event) => event.page === 1).trackIndex, 2);
 });
@@ -87,6 +93,7 @@ test('invalid selections produce no render call, progress, or ZIP download', asy
     const result = await exportSelected({ source, indices, onProgress: () => { calls += 1; } });
     assert.equal(result.blob, null);
     assert.equal(result.files.length, 0);
+    assert.deepEqual(result.pdfs, []);
     assert.equal(typeof result.error, 'string');
   }
   assert.equal(calls, 0);
@@ -102,6 +109,8 @@ test('cancellation preserves completed PDFs as a partial ZIP', async () => {
   assert.equal(result.error, null);
   assert.match(result.filename, /partial\.zip$/);
   assert.deepEqual(result.files, ['Song - 03 - Drums.pdf']);
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
+  assert.deepEqual(new Uint8Array(await result.pdfs[0].arrayBuffer()), pdfBytes(2));
   assert.deepEqual(Object.keys(unzipSync(new Uint8Array(await result.blob.arrayBuffer()))), result.files);
 });
 
@@ -113,6 +122,7 @@ test('a cancelled operation with no completed PDFs does not offer an empty ZIP',
   assert.equal(result.error, null);
   assert.equal(result.blob, null);
   assert.deepEqual(result.files, []);
+  assert.deepEqual(result.pdfs, []);
 });
 
 test('cancel settles while the shared PDF module is stalled and later retry remains usable', async (t) => {
@@ -153,7 +163,32 @@ test('render failure preserves previous PDFs and reports a partial ZIP honestly'
   assert.match(result.error, /Printer failed/);
   assert.match(result.filename, /partial\.zip$/);
   assert.deepEqual(result.files, ['Song - 03 - Drums.pdf']);
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
+  assert.deepEqual(new Uint8Array(await result.pdfs[0].arrayBuffer()), pdfBytes(2));
   assert.equal(Object.keys(unzipSync(new Uint8Array(await result.blob.arrayBuffer()))).length, 1);
+});
+
+test('ZIP packaging failure preserves every completed individual PDF', async () => {
+  const result = await createExporter(renderer, () => { throw new Error('ZIP allocation failed'); })({ source, indices: [2, 0] });
+  assert.equal(result.blob, null);
+  assert.equal(result.cancelled, false);
+  assert.match(result.error, /ZIP allocation failed/);
+  assert.deepEqual(result.pdfs.map(file => file.name), ['Song - 03 - Drums.pdf', 'Song - 01 - Guitar.pdf']);
+  assert.deepEqual(result.files, result.pdfs.map(file => file.name));
+  assert.deepEqual(new Uint8Array(await result.pdfs[0].arrayBuffer()), pdfBytes(2));
+  assert.deepEqual(new Uint8Array(await result.pdfs[1].arrayBuffer()), pdfBytes(0));
+});
+
+test('ZIP input read failure preserves already rendered PDF files', async (t) => {
+  const read = t.mock.method(File.prototype, 'arrayBuffer', async () => { throw new Error('Read allocation failed'); });
+  const result = await createExporter(renderer)({ source, indices: [2, 0] });
+  read.mock.restore();
+  assert.equal(result.blob, null);
+  assert.match(result.error, /Read allocation failed/);
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
+  assert.equal(result.pdfs.length, 2);
+  assert.deepEqual(new Uint8Array(await result.pdfs[0].arrayBuffer()), pdfBytes(2));
+  assert.deepEqual(new Uint8Array(await result.pdfs[1].arrayBuffer()), pdfBytes(0));
 });
 
 test('generated PDF budget rejects overflow before reading it and preserves earlier outputs', async () => {
@@ -164,6 +199,7 @@ test('generated PDF budget rejects overflow before reading it and preserves earl
   const result = await createExporter(async (request) => request.trackIndex === 0 ? new OversizedPdf() : renderer(request))({ source, indices: [2, 0] });
   assert.match(result.error, /128/);
   assert.deepEqual(result.files, ['Song - 03 - Drums.pdf']);
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
   assert.ok(result.blob instanceof Blob);
 });
 
@@ -174,6 +210,7 @@ test('ZIP filenames sanitize path traversal, reserved names, and long Unicode tr
   });
   assert.equal(result.error, null);
   assert.match(result.filename, /^_CON/);
+  assert.deepEqual(result.pdfs.map(file => file.name), result.files);
   for (const file of result.files) {
     assert.doesNotMatch(file, /[<>:"/\\|?*\u0000-\u001f]/);
     assert.ok(new TextEncoder().encode(file).length < 240);

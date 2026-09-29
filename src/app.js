@@ -1,5 +1,6 @@
 import { loadGp5 } from './import-score.js';
 import { exportSelected } from './export-score.js';
+import { clearDownloads, showResult, setDownloadsBusy } from './download-results.js';
 
 const byId = id => document.getElementById(id);
 const fileInput = byId('file-input');
@@ -7,10 +8,8 @@ const tracks = byId('tracks');
 const selectAll = byId('select-all');
 const status = byId('status');
 const progress = byId('progress');
-const download = byId('download');
 let source = null;
 let operation = null;
-let downloadUrl = null;
 
 function selectedIndices() {
   return [...tracks.querySelectorAll('.track-check:checked')].map(input => Number(input.value));
@@ -19,15 +18,6 @@ function selectedIndices() {
 function showError(message) {
   byId('error').textContent = message || '';
   byId('error').hidden = !message;
-}
-
-function clearDownload() {
-  if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-  downloadUrl = null;
-  download.removeAttribute('href');
-  download.hidden = true;
-  byId('outputs').replaceChildren();
-  byId('result').hidden = true;
 }
 
 function refreshControls() {
@@ -39,8 +29,7 @@ function refreshControls() {
   for (const checkbox of tracks.querySelectorAll('.track-check')) checkbox.disabled = busy;
   byId('cancel').hidden = !busy;
   byId('cancel').disabled = operation?.controller.signal.aborted ?? false;
-  download.setAttribute('aria-disabled', String(busy));
-  download.tabIndex = busy ? -1 : 0;
+  setDownloadsBusy(busy);
   tracks.setAttribute('aria-busy', String(busy));
 }
 
@@ -54,7 +43,7 @@ function selectionChanged() {
   for (const row of tracks.children) {
     row.querySelector('.track-state').textContent = row.querySelector('.track-check').checked ? '준비됨' : '선택 안 함';
   }
-  clearDownload();
+  clearDownloads();
   status.textContent = count ? `전체 ${total}개 중 ${count}개 악기를 PDF로 만들 준비가 됐습니다.` : 'PDF로 만들 악기를 하나 이상 선택해 주세요.';
   refreshControls();
 }
@@ -120,30 +109,12 @@ async function readFile(file) {
   }
 }
 
-function showResult(result, total) {
-  if (!result.blob || result.files.length === 0) return;
-  downloadUrl = URL.createObjectURL(result.blob);
-  download.href = downloadUrl;
-  download.download = result.filename;
-  download.textContent = `ZIP 다운로드 (${result.files.length}개 PDF)`;
-  download.hidden = false;
-  const partial = result.cancelled || Boolean(result.error) || result.files.length < total;
-  byId('result-title').textContent = partial ? '완성된 PDF만 다운로드' : 'PDF 다운로드 준비 완료';
-  byId('result-detail').textContent = `선택한 ${total}개 중 ${result.files.length}개 악기의 PDF가 ZIP에 들어 있습니다.`;
-  for (const filename of result.files) {
-    const item = document.createElement('li');
-    item.textContent = filename;
-    byId('outputs').append(item);
-  }
-  byId('result').hidden = false;
-}
-
 async function convert() {
   const indices = selectedIndices();
   if (operation || !source || indices.length === 0) return;
   const current = { kind: 'exporting', controller: new AbortController() };
   operation = current;
-  clearDownload();
+  clearDownloads();
   showError(null);
   refreshControls();
   progress.max = indices.length;
@@ -165,11 +136,11 @@ async function convert() {
     } });
     showError(result.error);
     showResult(result, indices.length);
-    const downloadable = Boolean(result.blob) && result.files.length > 0;
-    if (result.files.length > 0 && !downloadable) status.textContent = 'PDF를 ZIP으로 묶지 못해 다운로드할 수 없습니다. 악기를 나누어 다시 시도해 주세요.';
-    else if (result.cancelled) status.textContent = downloadable ? `변환을 취소했습니다. 완성된 PDF ${result.files.length}개를 다운로드할 수 있습니다.` : '변환을 취소했습니다. 완성된 PDF가 없습니다.';
-    else if (result.error) status.textContent = downloadable ? `일부 악기의 변환을 마치지 못했습니다. 완성된 PDF ${result.files.length}개는 다운로드할 수 있습니다.` : '변환을 마치지 못했습니다. 다시 시도해 주세요.';
-    else status.textContent = downloadable ? `선택한 악기 ${result.files.length}개의 PDF를 만들었습니다. ZIP을 다운로드해 주세요.` : '다운로드할 PDF를 만들지 못했습니다. 다시 시도해 주세요.';
+    const downloadable = result.pdfs.length > 0;
+    if (downloadable && !result.blob) status.textContent = 'ZIP을 만들지 못했습니다. 완성된 PDF는 각각 저장할 수 있습니다.';
+    else if (result.cancelled) status.textContent = downloadable ? `변환을 취소했습니다. 완성된 PDF ${result.files.length}개를 저장하세요.` : '변환을 취소했습니다. 완성된 PDF가 없습니다.';
+    else if (result.error) status.textContent = downloadable ? `일부 악기의 변환을 마치지 못했습니다. 완성된 PDF ${result.files.length}개를 저장하세요.` : '변환을 마치지 못했습니다. 다시 시도해 주세요.';
+    else status.textContent = downloadable ? `선택한 악기 ${result.files.length}개의 PDF를 만들었습니다. 개별 PDF 또는 ZIP을 저장해 주세요.` : '다운로드할 PDF를 만들지 못했습니다. 다시 시도해 주세요.';
   } catch (error) {
     showError(error instanceof Error ? error.message : 'PDF를 만들지 못했습니다.');
     status.textContent = '변환을 마치지 못했습니다. 다시 시도해 주세요.';
@@ -209,8 +180,7 @@ byId('cancel').addEventListener('click', () => {
     refreshControls();
   }
 });
-download.addEventListener('click', event => { if (operation) event.preventDefault(); });
 window.addEventListener('pagehide', event => {
-  if (!event.persisted) { operation?.controller.abort(); clearDownload(); }
+  if (!event.persisted) { operation?.controller.abort(); clearDownloads(); }
 });
 refreshControls();

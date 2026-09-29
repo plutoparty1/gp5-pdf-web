@@ -2,9 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <meta name="description" content="GP5 악보에서 원하는 악기를 선택해 PDF를 만드세요. 파일 업로드 없이 브라우저에서 변환하고 ZIP으로 다운로드합니다.">
+  <meta name="description" content="iPhone, iPad, Android, PC에서 GP5 악보를 악기별 PDF로 변환하세요. 파일 업로드 없이 PDF 저장·공유와 ZIP 다운로드를 지원합니다.">
   <meta name="theme-color" content="#f4f6f5">
   <title>GP5 PDF — 원하는 악기만 PDF로</title>
   <link rel="icon" href="data:,">
@@ -17,7 +17,7 @@
       <div><p class="wordmark">GP5 PDF</p><h1>악기마다, 하나의 PDF로.</h1></div>
       <span class="local-badge">내 기기에서 변환</span>
     </header>
-    <p class="intro">GP5 악보에서 필요한 악기만 골라 PDF로 만드세요. 완성된 파일을 ZIP 하나로 내려받습니다.</p>
+    <p class="intro">GP5 악보에서 필요한 악기만 골라 PDF로 만드세요. 휴대폰과 PC에서 바로 저장하세요.</p>
     <noscript><p class="error">이 도구를 사용하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
 
     <section class="file-panel" aria-labelledby="file-label">
@@ -25,10 +25,10 @@
         <h2 id="file-label">선택한 악보</h2>
         <p id="file-name">아직 선택한 파일이 없습니다</p>
         <p id="score-title" class="muted" hidden></p>
-        <p class="file-hint muted">GP5 파일 · 최대 64 MB</p>
+        <p id="file-hint" class="file-hint muted">GP5 파일 · 최대 64 MB<br>휴대폰의 파일 앱이나 다운로드 폴더에서 선택하세요.</p>
       </div>
       <button id="choose" class="secondary" type="button">GP5 파일 선택</button>
-      <input id="file-input" type="file" accept=".gp5" aria-label="GP5 악보 파일" hidden>
+      <input id="file-input" type="file" aria-label="GP5 악보 파일" aria-describedby="file-hint" hidden>
     </section>
 
     <section class="tracks-panel" aria-labelledby="tracks-label">
@@ -58,11 +58,21 @@
       <h2 id="result-title">PDF 다운로드 준비 완료</h2>
       <p id="result-detail" class="muted"></p>
       <ul id="outputs"></ul>
-      <a id="download" class="button primary" download hidden>ZIP 다운로드</a>
+      <div class="result-actions">
+        <a id="download" class="button primary" download hidden>ZIP 다운로드</a>
+        <button id="share-zip" class="secondary" type="button" hidden>ZIP 공유</button>
+      </div>
+      <p id="share-status" class="muted" role="status" aria-live="polite" aria-atomic="true"></p>
     </section>
 
-    <aside class="download-note" aria-label="저장 위치 안내"><strong>저장 위치는 브라우저의 다운로드 설정을 따릅니다.</strong><p>원본 GP5 폴더에 자동 저장되지는 않습니다. 내려받은 ZIP을 풀면 악기별 PDF를 확인할 수 있습니다.</p></aside>
-    <footer>파일 업로드 없이 브라우저에서 변환 · Guitar Pro·MuseScore 설치 불필요<a class="notice-link" href="./THIRD_PARTY.md">오픈소스 라이선스</a></footer>
+    <aside class="download-note" aria-label="휴대폰 저장 안내">
+      <strong>휴대폰에서 PDF 저장하기</strong>
+      <p>iPhone·iPad: 공유 → ‘파일에 저장’을 선택하세요. 공유 버튼이 없으면 PDF를 열고 Safari의 공유 메뉴를 이용하세요.</p>
+      <p>Android: ‘PDF 저장’을 눌러 다운로드하세요. ‘공유’ 버튼이 표시되면 다른 앱으로 전송하세요.</p>
+      <p>여러 악보는 ZIP으로 한 번에 받으세요. 저장 위치는 브라우저 설정을 따릅니다. 원본 GP5 폴더에 저장하려면 직접 옮기세요.</p>
+      <p>변환하는 동안 이 화면을 열어 두세요. 큰 악보는 악기를 나누어 변환하면 좋습니다.</p>
+    </aside>
+    <footer>v1.1.0 · iOS·Android·PC · 파일 업로드 없이 내 기기에서 변환<br>Guitar Pro·MuseScore 설치 불필요<a class="notice-link" href="./THIRD_PARTY.md">오픈소스 라이선스</a></footer>
   </main>
 </body>
 </html>

@@ -2,7 +2,7 @@
 
 ## 1. Intent and source
 
-Port the existing `../gp5-desktop/DESIGN.md` document-tool design to the browser. This is an existing design-system adaptation: preserve its quiet paper panels, dark green actions, Korean-first copy, and real instrument list. A person selects one GP5, chooses instruments, creates their PDFs, and explicitly downloads one ZIP. Files stay on the person's device. Downloads follow browser settings, not the GP5's original directory.
+Port the existing `../gp5-desktop/DESIGN.md` document-tool design to the browser. This is an existing design-system adaptation: preserve its quiet paper panels, dark green actions, Korean-first copy, and real instrument list. A person selects one GP5, chooses instruments, creates their PDFs, and explicitly saves an individual PDF or one ZIP. Files stay on the person's device. Downloads follow browser settings, not the GP5's original directory.
 
 Primary users are a musician with a desktop keyboard and a musician opening the page on a small touch screen. Both must identify their file, change the instrument selection, cancel safely, understand partial results, and download without accounts or additional applications. Screen-reader users need named native controls and separate live feedback.
 
@@ -16,16 +16,16 @@ Use system-ui, Malgun Gothic, Apple SD Gothic Neo, sans-serif. The scale is 12/1
 
 ## 4. Layout and spacing
 
-Support viewport widths from 320px. Main content has an 880px maximum width, 32px padding on desktop and 16px on small screens. Reuse spacing 4/8/12/16/24/32/48px and 6px panel radius. Header, file panel, instrument list, conversion controls, feedback, and ZIP result follow that order. At 600px and below, file and action panels stack. Track labels can wrap, while the original number and state remain identifiable. All content stays reachable through ordinary page scrolling.
+Support viewport widths from 320px. Main content has an 880px maximum width, 32px padding on desktop and 16px on small screens. Reuse spacing 4/8/12/16/24/32/48px and 6px panel radius. Header, file panel, instrument list, conversion controls, feedback, and ZIP result follow that order. At 600px and below, file and action panels stack. Safe-area insets supplement the existing page padding; output actions wrap and expand for touch use. Track labels can wrap, while the original number and state remain identifiable. All content stays reachable through ordinary page scrolling.
 
 ## 5. Primitives and states
 
 - Buttons and download link: shared 44px minimum hit area, primary/secondary variants, visible focus, hover, disabled. Downloads use a real anchor activated by the user, never automatic separate file downloads.
-- File panel: empty/loading/selected/invalid; show filename and optional score title. The native picker remains the primary file input. Validate extension and a 64MB size limit before reading. Cancelled or stale reads cannot replace the current score.
+- File panel: empty/loading/selected/invalid; show filename and optional score title. The native picker remains the primary file input. Omit the accept filter so iOS and Android can select unregistered GP5 files; validate extension and a 64MB size limit before reading. Cancelled or stale reads cannot replace the current score.
 - Track list: labeled native checkboxes, original sequence, name, and textual state. New files select every track. The 16px whole-list checkbox supports checked/unchecked/indeterminate states with a 44px label area. Show selected/total counts and disable conversion at zero.
 - Busy state: lock file input, checkboxes, conversion, and existing download actions. Keep cancellation available. Preserve source and selection when file picking is cancelled.
 - Progress: selected ordinal/total, original track row, and an accessible progress element. Unselected rows remain unselected. Selected unfinished rows settle to incomplete after cancellation or failure.
-- Result: explicit ZIP download plus contained PDF names. Completed/partial/empty/error wording must describe files ready to download, never claim they were already saved to disk. If PDF rendering succeeded but ZIP creation failed, show that no download is available and suggest fewer instruments. Existing object URLs are revoked on replacement and actual page unload.
+- Result: a reusable output row contains the filename, PDF save and open links, and a share button only when file sharing is supported. The ZIP save/share group follows all rows. All actions reuse the 44px button primitive, spacing tokens, and wrapping layouts. Completed PDFs remain available even if ZIP assembly fails. Sharing is called directly from a tap, supports cancellation and retry, and never claims a file was saved. Busy state removes download/open hrefs and disables sharing; replacement revokes object URLs, while persisted pagehide preserves them. Separate live share feedback cannot overwrite conversion state.
 - Error: role alert and plain Korean feedback; retry uses the normal file and conversion actions.
 
 ## 6. Accessibility and motion
