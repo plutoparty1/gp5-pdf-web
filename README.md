@@ -1,6 +1,6 @@
 # GP5 PDF 웹 버전
 
-GP5 파일을 선택하고 원하는 악기만 체크하면 악기별 PDF를 만드는 웹앱입니다. **v1.1.0부터 iPhone·iPad Safari와 Android Chrome에서 PDF 저장·열기·공유를 지원합니다.** Windows·Mac에서도 프로그램 설치 없이 사용할 수 있습니다. 악보는 서버에 업로드하지 않습니다.
+GP5 파일을 선택하고 원하는 악기만 체크하면 악기별 PDF를 만드는 웹앱입니다. **v1.1.1부터 Android Chrome의 GP5 첨부는 파일 형식 힌트를 사용해 일반 파일 선택기로 열립니다.** iPhone·iPad Safari와 Android Chrome에서 PDF 저장·열기·공유를 지원합니다. Windows·Mac에서도 프로그램 설치 없이 사용할 수 있습니다. 악보는 서버에 업로드하지 않습니다.
 
 - 사이트: https://plutoparty1.github.io/gp5-pdf-web/
 - 소스·이슈: https://github.com/plutoparty1/gp5-pdf-web

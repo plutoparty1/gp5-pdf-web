@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- Android GP5 uploads now declare the `.gp5` extension and generic binary MIME type so the browser opens a general file picker rather than limiting selection to photos and videos.
+
 ## 1.1.0
 
 - iPhone/iPad Safari and Android Chrome usage: unrestricted native file picker with GP5 validation, individual PDF save/open links and supported native sharing.
